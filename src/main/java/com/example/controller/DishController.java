@@ -2,8 +2,8 @@ package com.example.controller;
 
 import com.example.domain.Dish;
 import com.example.repository.DishRepository;
-import com.example.service.DishService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -12,21 +12,24 @@ import java.util.Optional;
 @CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/dishes")
-public class DishController {
-    @Autowired
-    private DishService dishService;
+public class DishController { @Autowired
+private DishRepository dishRepository;
 
-    //- Create an API to fetch the list of dishes from the database.
     @GetMapping
-    public List<Dish> getAllDishes () {
-        return dishService.getAllDishes();
+    public List<Dish> getAllDishes() {
+        return dishRepository.findAll();
     }
 
-    //- Create an API to toggle the `isPublished` status of a dish.
-    @PostMapping("/toggle/{id}")
-    public Dish toggleDishStatus ( @PathVariable Long dishId ) {
-        return dishService.toggleDishStatus(dishId);
+    @PutMapping("/{dishId}")
+    public ResponseEntity<Void> togglePublishStatus( @PathVariable Long dishId) {
+        Optional<Dish> dishOptional = dishRepository.findById(dishId);
+        if (dishOptional.isPresent()) {
+            Dish dish = dishOptional.get();
+            dish.setIsPublished(!dish.getIsPublished());
+            dishRepository.save(dish);
+            return ResponseEntity.ok().build();
+        }
+        return ResponseEntity.notFound().build();
     }
-
 }
 

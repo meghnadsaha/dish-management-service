@@ -3,6 +3,7 @@ package com.example.service;
 import com.example.domain.Dish;
 import com.example.repository.DishRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,12 +26,18 @@ public class DishService {
         return dishRepository.save(dish);
     }
 
-    public Dish togglePublishStatus(Long dishId) {
-        Dish dish = dishRepository.findById(dishId)
-                                  .orElseThrow(() -> new RuntimeException("Dish not found with id: " + dishId));
 
-        dish.setIsPublished(!dish.getIsPublished());
-        return dishRepository.save(dish);
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
+
+    public void togglePublishStatus(Long dishId) {
+        Optional<Dish> dishOptional = dishRepository.findById(dishId);
+        if (dishOptional.isPresent()) {
+            Dish dish = dishOptional.get();
+            dish.setIsPublished(!dish.getIsPublished());
+            dishRepository.save(dish);
+            messagingTemplate.convertAndSend("/topic/dish-updates", dish);
+        }
     }
 
 
